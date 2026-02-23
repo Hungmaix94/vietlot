@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String             @id @default(cuid())
+  username     String             @unique
+  role         Role               @default(USER)
+  // Since password is a fixed env string, we don't strictly *need* to store it,
+  // but we can store a hash if we want them to be able to change it later.
+  password     String             
+  spinResults  SpinResult[]
+  submissions  TicketSubmission[]
+  createdAt    DateTime           @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model SpinResult {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id])
+  tickets     Int                // Number of tickets won (1-5)
+  isUsed      Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  submissions TicketSubmission[]
+}
+
+model TicketSubmission {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  spinResultId String
+  spinResult   SpinResult @relation(fields: [spinResultId], references: [id])
+  tickets      Json       // e.g. [[1,2,3,4,5,6], [10,12,23,34,45,55]]
+  createdAt    DateTime   @default(now())
+}
